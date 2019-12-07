@@ -45,7 +45,7 @@ pipeline {
                     rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war ubuntu@10.0.28.8:/var/lib/tomcat9/webapps/
                     ssh -o StrictHostKeyChecking=no ubuntu@10.0.28.8 << ENDSSH
                     sudo systemctl restart tomcat9
-                    ENDSSH
+ENDSSH
                 '''
                            
                 
