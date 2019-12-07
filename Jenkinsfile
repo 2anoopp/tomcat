@@ -33,14 +33,8 @@ pipeline {
 //  Deploy war file to Webserver
 
         stage("Deploy Image - Production "){
-            when { branch 'master' }
-            options {
-                timeout(time: 10, unit: 'MINUTES')
-            }
-
-            
+            when { branch 'master' }            
              steps{
-                input message: "Press Proceed to continue deployment", submitter:"jenkinsadmin,pinmicroadmin"
                 sh '''#!/usr/bin/env bash
                     rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war ubuntu@10.0.28.8:/var/lib/tomcat9/webapps/
                     ssh -o StrictHostKeyChecking=no ubuntu@10.0.28.8 << ENDSSH
