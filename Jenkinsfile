@@ -12,19 +12,6 @@ pipeline {
     stages {
 
 //  Checkout Git Repository
-
-        stage("Git Checkout - Development"){
-            when { branch 'development' }
-            steps {
-                checkout scm
-                }
-        }
-        stage("Git Checkout - Staging"){
-            when { branch 'staging' }
-            steps {
-                checkout scm
-                }
-        }
         stage("Git Checkout - Production"){
             when { branch 'master' }
             steps {
@@ -32,62 +19,19 @@ pipeline {
                 }
         } 
 
-//  Build War file
-
-        stage("Build War - Development"){
-            when { branch 'development' }
-            steps{
-                sh '''#!/usr/bin/env bash
-                    cd sample-app
-                    java -cvf sample.war *
-                '''
-            }
-        }
-        stage("Build Image - Staging"){
-            when { branch 'staging' }
-            steps{
-                sh '''#!/usr/bin/env bash
-                    cd sample-app
-                    java -cvf sample.war *
-                '''
-            }
-        }
         stage("Build Image  - Production "){
             when { branch 'master' }
             steps{
-                sh '''#!/usr/bin/env bash
-                    cd sample-app
-                    java -cvf sample.war *
-                '''
+                dir("maven-sample"){
+                    sh 'mvn package'
+                }
+                
             }
         } 
 
 
-
 //  Deploy war file to Webserver
 
-        stage("Deploy War - Development"){
-            when { branch 'development' }
-            steps{
-                sh '''#!/usr/bin/env bash
-                    scp -o StrictHostKeyChecking=no sample-app/sample.war ubuntu@10.0.28.8:/var/lib/tomcat9/webapps/
-                    ssh -o StrictHostKeyChecking=no ubuntu@10.0.28.8 <<-'ENDSSH'
-                    sudo systemctl restart tomcat9
-                    ENDSSH
-                '''
-            }
-        }
-        stage("Deploy Image - Staging"){
-            when { branch 'staging' }
-             steps{
-                sh '''#!/usr/bin/env bash
-                    scp -o StrictHostKeyChecking=no sample-app/sample.war ubuntu@10.0.28.8:/var/lib/tomcat9/webapps/
-                    ssh -o StrictHostKeyChecking=no ubuntu@10.0.28.8 <<-'ENDSSH'
-                    sudo systemctl restart tomcat9
-                    ENDSSH
-                '''
-            }
-        }
         stage("Deploy Image - Production "){
             when { branch 'master' }
             options {
@@ -98,7 +42,7 @@ pipeline {
              steps{
                 input message: "Press Proceed to continue deployment", submitter:"jenkinsadmin,pinmicroadmin"
                 sh '''#!/usr/bin/env bash
-                    scp -o StrictHostKeyChecking=no sample-app/sample.war ubuntu@10.0.28.8:/var/lib/tomcat9/webapps/
+                    scp -o StrictHostKeyChecking=no maven-sample/target/*.war ubuntu@10.0.28.8:/var/lib/tomcat9/webapps/
                     ssh -o StrictHostKeyChecking=no ubuntu@10.0.28.8 <<-'ENDSSH'
                     sudo systemctl restart tomcat9
                     ENDSSH
