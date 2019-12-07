@@ -25,12 +25,13 @@ pipeline {
                 dir("maven-sample"){
                     sh 'mvn package'
                 }
+            }
             post {
                 success {
                     echo 'Pushing archive to S3'
                     s3Upload(file:'maven-sample/target/*.war', bucket:'nr-innovaturelabs-artifacts', path:'glues')
                 }
-            } 
+            
             }
         } 
 
