@@ -66,7 +66,7 @@ pipeline {
             post {
                 success {
                     echo 'Pushing archive to S3'
-                    s3Upload(file:'maven-sample/target/java-tomcat-maven-example.war', bucket:'{params.s3_bucket_glues_prod}', path:'glues/java-tomcat-maven-example.war')
+                    s3Upload(file:'maven-sample/target/java-tomcat-maven-example.war', bucket:"${params.s3_bucket_glues_prod}", path:'glues/java-tomcat-maven-example.war')
                 }
             }
         } 
@@ -78,8 +78,8 @@ pipeline {
             when { branch 'master' }            
              steps{
                 sh '''#!/usr/bin/env bash
-                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war {params.glues_dev_ssh_user}@${params.glues_dev}:/var/lib/tomcat9/webapps/
-                    ssh -o StrictHostKeyChecking=no {params.glues_dev_ssh_user}@${params.glues_dev_server} << ENDSSH
+                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war "${params.glues_dev_ssh_user}"@"${params.glues_dev}":/var/lib/tomcat9/webapps/
+                    ssh -o StrictHostKeyChecking=no "${params.glues_dev_ssh_user}"@"${params.glues_dev_server}" << ENDSSH
                     sudo systemctl restart tomcat9
 ENDSSH
                 '''                
