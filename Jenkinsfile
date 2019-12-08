@@ -8,10 +8,29 @@ pipeline {
     triggers {
          pollSCM('* * * * *')
      }
-  
+
+    parameters {
+        string(name: 'glues_dev_server', defaultValue: '10.0.28.8', description: 'Development Server')
+        string(name: 'glues_stage_server', defaultValue: '10.0.28.8', description: 'Staging Server')
+        string(name: 'glues_dev_ssh_user', defaultValue: 'ubuntu', description: 'Staging Server')
+        string(name: 'glues_stage_ssh_user', defaultValue: 'ubuntu', description: 'Staging Server')
+        string(name: 's3_bucket_glues_prod', defaultValue: 'nr-innovaturelabs-artifacts', description: 'Production S3 bucket')
+    }
     stages {
 
 //  Checkout Git Repository
+        stage("Git Checkout - Development"){
+            when { branch 'development' }
+            steps {
+                checkout scm
+                }
+        }
+        stage("Git Checkout - Staging"){
+            when { branch 'staging' }
+            steps {
+                checkout scm
+                }
+        }
         stage("Git Checkout - Production"){
             when { branch 'master' }
             steps {
@@ -19,7 +38,25 @@ pipeline {
                 }
         } 
 
-        stage("Build Image  - Production "){
+        stage("Build War  - Development "){
+            when { branch 'development' }
+            steps{
+                dir("maven-sample"){
+                    sh 'mvn package'
+                    }
+                }
+        }
+
+        stage("Build War  - Staging "){
+            when { branch 'staging' }
+            steps{
+                dir("maven-sample"){
+                    sh 'mvn package'
+                    }
+                }
+        }
+
+        stage("Build War  - Production "){
             when { branch 'master' }
             steps{
                 dir("maven-sample"){
@@ -29,7 +66,7 @@ pipeline {
             post {
                 success {
                     echo 'Pushing archive to S3'
-                    s3Upload(file:'maven-sample/target/java-tomcat-maven-example.war', bucket:'nr-innovaturelabs-artifacts', path:'glues/java-tomcat-maven-example.war')
+                    s3Upload(file:'maven-sample/target/java-tomcat-maven-example.war', bucket:'{params.s3_bucket_glues_prod}', path:'glues/java-tomcat-maven-example.war')
                 }
             }
         } 
@@ -37,23 +74,30 @@ pipeline {
 
 //  Deploy war file to Webserver
 
-        stage("Deploy Image - Production "){
+        stage("Deploy War - Development "){
             when { branch 'master' }            
              steps{
                 sh '''#!/usr/bin/env bash
-                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war ubuntu@10.0.28.8:/var/lib/tomcat9/webapps/
-                    ssh -o StrictHostKeyChecking=no ubuntu@10.0.28.8 << ENDSSH
+                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war {params.glues_dev_ssh_user}@${params.glues_dev}:/var/lib/tomcat9/webapps/
+                    ssh -o StrictHostKeyChecking=no {params.glues_dev_ssh_user}@${params.glues_dev_server} << ENDSSH
                     sudo systemctl restart tomcat9
 ENDSSH
-                '''
-                           
-                
+                '''                
             } 
         } 
 
+        stage("Deploy War - Staging "){
+            when { branch 'staging' }            
+             steps{
+                sh '''#!/usr/bin/env bash
+                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war {params.glues_dev_ssh_user}@{params.glues_stage_server}:/var/lib/tomcat9/webapps/
+                    ssh -o StrictHostKeyChecking=no {params.glues_dev_ssh_user}@${params.glues_stage_server} << ENDSSH
+                    sudo systemctl restart tomcat9
+ENDSSH
+                '''                
+            } 
+        } 
     }  
-            
-
 
     post {
 
