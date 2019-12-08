@@ -97,8 +97,9 @@ pipeline {
                 }
             post {
                 success {
-                    sh 'tar -zcvf maven-sample/target/java-tomcat-maven-example.war.tgz maven-sample/target/java-tomcat-maven-example.war'
-                    s3Upload(file:'maven-sample/target/java-tomcat-maven-example.war.tgz', bucket:"${params.s3_bucket_glues_prod}", path:'glues/java-tomcat-maven-example.war.tgz')
+                    sh 'cp maven-sample/target/java-tomcat-maven-example.war codedeploy/'
+                    sh 'tar -zcvf glues-codedeploy.tar.gz -C codedeploy .'
+                    s3Upload(file:'glues-codedeploy.tar.gz', bucket:"${params.s3_bucket_glues_prod}", path:'glues/glues-codedeploy.tar.gz')
                 }
             }
         } 
