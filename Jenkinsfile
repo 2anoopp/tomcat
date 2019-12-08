@@ -75,11 +75,15 @@ pipeline {
 //  Deploy war file to Webserver
 
         stage("Deploy War - Development "){
+            environment{
+                glues_dev_ssh_user = "${params.glues_dev_ssh_user}"
+                glues_dev_server = "${params.glues_dev_server}"
+            }
             when { branch 'master' }            
              steps{
                 sh '''#!/usr/bin/env bash
-                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war ${params.glues_dev_ssh_user}@${params.glues_dev}:/var/lib/tomcat9/webapps/
-                    ssh -o StrictHostKeyChecking=no ${params.glues_dev_ssh_user}@${params.glues_dev_server} << ENDSSH
+                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war $glues_dev_ssh_user@$glues_dev_server:/var/lib/tomcat9/webapps/
+                    ssh -o StrictHostKeyChecking=no $glues_dev_ssh_user@$glues_dev_server << ENDSSH
                     sudo systemctl restart tomcat9
 ENDSSH
                 '''                
@@ -87,11 +91,16 @@ ENDSSH
         } 
 
         stage("Deploy War - Staging "){
+            environment{
+                glues_stage_ssh_user = "${params.glues_stage_ssh_user}"
+                glues_stage_server = "${params.glues_stage_server}"
+            }
+
             when { branch 'staging' }            
              steps{
                 sh '''#!/usr/bin/env bash
-                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war {params.glues_dev_ssh_user}@{params.glues_stage_server}:/var/lib/tomcat9/webapps/
-                    ssh -o StrictHostKeyChecking=no {params.glues_dev_ssh_user}@${params.glues_stage_server} << ENDSSH
+                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war $glues_stage_ssh_user@$glues_stage_server:/var/lib/tomcat9/webapps/
+                    ssh -o StrictHostKeyChecking=no $glues_stage_ssh_user@$glues_stage_server << ENDSSH
                     sudo systemctl restart tomcat9
 ENDSSH
                 '''                
