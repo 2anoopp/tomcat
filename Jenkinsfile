@@ -10,10 +10,17 @@ pipeline {
      }
 
     parameters {
+
+        string(name: 'sns_noc_arn_dev', defaultValue: '', description: 'Glues SNS Topic for Jenkins Build Notifications - Development')
+        string(name: 'sns_noc_arn_stage', defaultValue: '', description: 'Glues SNS Topic for Jenkins Build Notifications - Staging')
+        string(name: 'sns_noc_arn_prod', defaultValue: '', description: 'Glues SNS Topic for Jenkins Build Notifications - Production')
+        
         string(name: 'glues_dev_server', defaultValue: '10.0.28.8', description: 'Development Server')
-        string(name: 'glues_stage_server', defaultValue: '10.0.28.8', description: 'Staging Server')
         string(name: 'glues_dev_ssh_user', defaultValue: 'ubuntu', description: 'Staging Server')
+
+        string(name: 'glues_stage_server', defaultValue: '10.0.28.8', description: 'Staging Server')
         string(name: 'glues_stage_ssh_user', defaultValue: 'ubuntu', description: 'Staging Server')
+        
         string(name: 's3_bucket_glues_prod', defaultValue: 'nr-innovaturelabs-artifacts', description: 'Production S3 bucket')
     }
     stages {
@@ -37,6 +44,31 @@ pipeline {
                 checkout scm
                 }
         } 
+
+//  Send Build Notification
+
+        // stage('Send Notification - Development'){
+        //     when {branch 'development' }
+        //     steps {
+        //         snsPublish(topicArn:"${params.sns_noc_arn_dev}", subject:'Starting build', message:"Build: ${env.BUILD_NUMBER} started ")
+        //     }
+        // }
+
+        // stage('Send Notification - Staging'){
+        //     when {branch 'staging' }
+        //     steps {
+        //         snsPublish(topicArn:"${params.sns_noc_arn_stage}", subject:'Starting build', message:"Build: ${env.BUILD_NUMBER} started ")
+        //     }
+        // }
+
+        // stage('Send Notification - Production'){
+        //     when {branch 'production' }
+        //     steps {
+        //         snsPublish(topicArn:"${params.sns_noc_arn_prod}", subject:'Starting build', message:"Build: ${env.BUILD_NUMBER} started ")
+        //     }
+        // }        
+
+//  Build War File
 
         stage("Build War  - Development "){
             when { branch 'development' }
@@ -65,8 +97,8 @@ pipeline {
                 }
             post {
                 success {
-                    echo 'Pushing archive to S3'
-                    s3Upload(file:'maven-sample/target/java-tomcat-maven-example.war', bucket:"${params.s3_bucket_glues_prod}", path:'glues/java-tomcat-maven-example.war')
+                    sh 'tar -zcvf maven-sample/target/java-tomcat-maven-example.war.tgz maven-sample/target/java-tomcat-maven-example.war'
+                    s3Upload(file:'maven-sample/target/java-tomcat-maven-example.war.tgz', bucket:"${params.s3_bucket_glues_prod}", path:'glues/java-tomcat-maven-example.war.tgz')
                 }
             }
         } 
@@ -79,7 +111,7 @@ pipeline {
                 glues_dev_ssh_user = "${params.glues_dev_ssh_user}"
                 glues_dev_server = "${params.glues_dev_server}"
             }
-            when { branch 'master' }            
+            when { branch 'development' }            
              steps{
                 sh '''#!/usr/bin/env bash
                     rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war $glues_dev_ssh_user@$glues_dev_server:/var/lib/tomcat9/webapps/
