@@ -78,8 +78,8 @@ pipeline {
             when { branch 'master' }            
              steps{
                 sh '''#!/usr/bin/env bash
-                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war "${params.glues_dev_ssh_user}"@"${params.glues_dev}":/var/lib/tomcat9/webapps/
-                    ssh -o StrictHostKeyChecking=no "${params.glues_dev_ssh_user}"@"${params.glues_dev_server}" << ENDSSH
+                    rsync -av --rsync-path="sudo rsync" maven-sample/target/*.war ${params.glues_dev_ssh_user}@${params.glues_dev}:/var/lib/tomcat9/webapps/
+                    ssh -o StrictHostKeyChecking=no ${params.glues_dev_ssh_user}@${params.glues_dev_server} << ENDSSH
                     sudo systemctl restart tomcat9
 ENDSSH
                 '''                
